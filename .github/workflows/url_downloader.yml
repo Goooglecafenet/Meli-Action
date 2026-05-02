@@ -55,10 +55,10 @@ jobs:
           
           wget -O "$FILENAME" "$URL"
           
-          # Store filename and size (in bytes) for next steps
+          SIZE_BYTES=$(wc -c < "$FILENAME")
           echo "filename=$FILENAME" >> $GITHUB_OUTPUT
-          echo "size_bytes=$(stat -c%s "$FILENAME")" >> $GITHUB_OUTPUT
-          echo "Downloaded: $FILENAME ($(numfmt --to=iec $size_bytes))"
+          echo "size_bytes=$SIZE_BYTES" >> $GITHUB_OUTPUT
+          echo "Downloaded: $FILENAME ($(numfmt --to=iec $SIZE_BYTES))"
 
       - name: Conditional split (if file > 99 MB)
         id: split
@@ -74,7 +74,6 @@ jobs:
           if (( $(echo "$SIZE_MB > $THRESHOLD_MB" | bc -l) )); then
             echo "File size ${SIZE_MB}MB exceeds 99MB – splitting into 95MB RAR parts."
             
-            # If archive_name is empty, use the file's base name (without extension)
             INPUT_ARCHIVE_NAME="${{ github.event.inputs.archive_name }}"
             if [ -n "$INPUT_ARCHIVE_NAME" ]; then
               ARCHIVE_NAME="$INPUT_ARCHIVE_NAME"
@@ -85,7 +84,6 @@ jobs:
             
             rar a -v95m -m5 -ep1 "${ARCHIVE_NAME}.rar" "$FILENAME"
             
-            # Remove original file after successful split
             rm "$FILENAME"
             
             echo "split_done=true" >> $GITHUB_OUTPUT
